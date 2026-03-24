@@ -32,8 +32,8 @@ async function sendMail(opts: {
 }) {
   const transporter = getTransporter();
   if (!transporter) {
-    // Dev fallback — print to console so emails are visible without SMTP
-    console.log(`\n📧 [EMAIL → ${opts.to}]\nSubject: ${opts.subject}\n${opts.text}\n`);
+    // Dev fallback — log email sending without exposing sensitive content
+    console.log(`\n📧 [EMAIL → ${opts.to}]\nSubject: ${opts.subject}\n[Email content omitted for security]\n`);
     return;
   }
   try {
