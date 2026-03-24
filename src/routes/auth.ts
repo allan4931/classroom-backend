@@ -10,6 +10,7 @@ import {
   sendWelcomeEmail,
   sendLoginNotificationEmail,
   sendNewRegistrationNotice,
+  sendRejectionEmail,
 } from "../lib/email.js";
 
 const router = express.Router();
@@ -120,26 +121,16 @@ router.post("/login", async (req, res) => {
     const cred = credRows[0];
     
     if (!cred?.password) {
-      console.log('No credential record found, checking user table for legacy password...');
-      // Check if password is stored directly in user table (legacy)
-      if (foundUser.password && await bcrypt.compare(password, foundUser.password)) {
-        console.log('Legacy password match found!');
-        const token = signToken({ userId: foundUser.id, email: foundUser.email, role: foundUser.role, name: foundUser.name });
-        const refreshToken = signRefreshToken(foundUser.id);
-        // Login notification email (fire-and-forget)
-        const ip = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ?? req.socket?.remoteAddress ?? "Unknown";
-        const userAgent = req.headers["user-agent"] ?? "Unknown device";
-        sendLoginNotificationEmail({ to: foundUser.email, name: foundUser.name, ip, userAgent, timestamp: new Date() }).catch(() => {});
-        res.json({ token, refreshToken, user: { id: foundUser.id, email: foundUser.email, name: foundUser.name, role: foundUser.role } });
-        return;
-      }
-      
+      console.log('No credential record found');
       res.status(401).json({ error: "Invalid email or password." }); 
       return; 
     }
 
     console.log('Found credential record:', !!cred);
     console.log('Comparing with account password...');
+    
+    let token: string;
+    let refreshToken: string;
     
     try {
       const valid = await bcrypt.compare(password, cred.password);
@@ -151,27 +142,25 @@ router.post("/login", async (req, res) => {
         return; 
       }
       
-      const token        = signToken({ userId: foundUser.id, email: foundUser.email, role: foundUser.role, name: foundUser.name });
-      const refreshToken = signRefreshToken(foundUser.id);
+      token = signToken({ userId: foundUser.id, email: foundUser.email, role: foundUser.role, name: foundUser.name });
+      refreshToken = signRefreshToken(foundUser.id);
       
-      res.json({ token, refreshToken, user: { id: foundUser.id, email: foundUser.email, name: foundUser.name, role: foundUser.role } });
+      // Login notification email (fire-and-forget)
+      const ip        = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ?? req.socket?.remoteAddress ?? "Unknown";
+      const userAgent = req.headers["user-agent"] ?? "Unknown device";
+      sendLoginNotificationEmail({ to: foundUser.email, name: foundUser.name, ip, userAgent, timestamp: new Date() }).catch(() => {});
+
+      res.json({
+        message: "Login successful.",
+        user: { id: foundUser.id, email: foundUser.email, name: foundUser.name, role: foundUser.role, image: foundUser.image, isMainAdmin: foundUser.isMainAdmin },
+        token,
+        refreshToken,
+      });
     } catch (compareError) {
       console.error('Bcrypt comparison error:', compareError);
       res.status(500).json({ error: "Login failed due to server error." });
       return;
     }
-
-    // Login notification email (fire-and-forget)
-    const ip        = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ?? req.socket?.remoteAddress ?? "Unknown";
-    const userAgent = req.headers["user-agent"] ?? "Unknown device";
-    sendLoginNotificationEmail({ to: foundUser.email, name: foundUser.name, ip, userAgent, timestamp: new Date() }).catch(() => {});
-
-    res.json({
-      message: "Login successful.",
-      user: { id: foundUser.id, email: foundUser.email, name: foundUser.name, role: foundUser.role, image: foundUser.image, isMainAdmin: foundUser.isMainAdmin },
-      token,
-      refreshToken,
-    });
   } catch (e) {
     console.error("Login error:", e);
     res.status(500).json({ error: "Login failed. Please try again." });

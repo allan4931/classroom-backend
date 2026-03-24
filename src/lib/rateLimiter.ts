@@ -39,7 +39,7 @@ export const loginLimiter = rateLimit({
     }
     
     // If too many attempts, lock account for 30 minutes
-    if (attempts?.count >= 5) {
+    if (attempts && attempts.count >= 5) {
       failedAttempts.set(email, {
         count: attempts.count + 1,
         lastAttempt: now,

@@ -64,7 +64,11 @@ router.post("/:id/reject", async (req, res) => {
     await db.update(pendingRegistrations).set({ status: "rejected", rejectionReason: reason ?? null }).where(eq(pendingRegistrations.id, id));
 
     // Rejection email
-    sendRejectionEmail({ to: pending.email, name: pending.name, role: pending.role, reason }).catch(() => {});
+    if (reason) {
+      sendRejectionEmail({ to: pending.email, name: pending.name, role: pending.role, reason }).catch(() => {});
+    } else {
+      sendRejectionEmail({ to: pending.email, name: pending.name, role: pending.role }).catch(() => {});
+    }
 
     res.json({ data: { message: "Registration rejected." } });
   } catch { res.status(500).json({ error: "Failed to reject registration." }); }

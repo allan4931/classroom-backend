@@ -1,7 +1,7 @@
 /**
  * JWT utilities — short-lived access tokens (24h) + long-lived refresh tokens (30d)
  */
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 
 const SECRET = process.env.JWT_SECRET;
 if (!SECRET) throw new Error("JWT_SECRET environment variable is required");
@@ -23,21 +23,22 @@ export interface RefreshPayload {
 }
 
 export function signToken(payload: JWTPayload): string {
-  return jwt.sign(payload, SECRET, { expiresIn: ACCESS_EXPIRES });
+  return jwt.sign(payload, SECRET as string, { expiresIn: ACCESS_EXPIRES } as SignOptions);
 }
 
 export function signRefreshToken(userId: string): string {
-  return jwt.sign({ userId, type: "refresh" } satisfies RefreshPayload, SECRET, {
+  return jwt.sign({ userId, type: "refresh" } satisfies RefreshPayload, SECRET as string, {
     expiresIn: REFRESH_EXPIRES,
-  });
+  } as SignOptions);
 }
 
 export function verifyToken(token: string): JWTPayload {
-  return jwt.verify(token, SECRET) as JWTPayload;
+  const payload = jwt.verify(token, SECRET as string);
+  return payload as JWTPayload;
 }
 
 export function verifyRefreshToken(token: string): RefreshPayload {
-  const payload = jwt.verify(token, SECRET) as any;
+  const payload = jwt.verify(token, SECRET as string) as any;
   if (payload.type !== "refresh") throw new Error("Not a refresh token");
   return payload as RefreshPayload;
 }

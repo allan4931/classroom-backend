@@ -75,7 +75,10 @@ router.post("/", requireRole("admin", "teacher"), async (req, res) => {
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
   const currentUser = req.user!;
+  
+  if (!id) { res.status(400).json({ error: "User ID is required." }); return; }
   if (currentUser.role !== "admin" && currentUser.userId !== id) { res.status(403).json({ error: "Forbidden." }); return; }
+  
   const rows = await db.select({ id: user.id, name: user.name, email: user.email, role: user.role, image: user.image, isMainAdmin: user.isMainAdmin, status: user.status, createdAt: user.createdAt, updatedAt: user.updatedAt }).from(user).where(eq(user.id, id));
   const found = rows[0];
   if (!found) { res.status(404).json({ error: "User not found." }); return; }
@@ -86,7 +89,10 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
   const currentUser = req.user!;
+  
+  if (!id) { res.status(400).json({ error: "User ID is required." }); return; }
   if (currentUser.role !== "admin" && currentUser.userId !== id) { res.status(403).json({ error: "You can only update your own profile." }); return; }
+  
   try {
     const { name, image, imageCldPubId, role } = req.body as { name?: string; image?: string; imageCldPubId?: string; role?: "admin" | "teacher" | "student" };
     const updateData: Record<string, unknown> = {};
@@ -105,6 +111,8 @@ router.put("/:id", async (req, res) => {
 router.post("/:id/suspend", requireRole("admin"), async (req, res) => {
   const { id } = req.params;
   const currentUser = req.user!;
+  
+  if (!id) { res.status(400).json({ error: "User ID is required." }); return; }
   if (currentUser.userId === id) { res.status(400).json({ error: "Cannot suspend your own account." }); return; }
 
   const targetRows = await db.select({ isMainAdmin: user.isMainAdmin, status: user.status }).from(user).where(eq(user.id, id));
@@ -119,6 +127,9 @@ router.post("/:id/suspend", requireRole("admin"), async (req, res) => {
 /* ── POST /api/users/:id/reinstate ── admin only */
 router.post("/:id/reinstate", requireRole("admin"), async (req, res) => {
   const { id } = req.params;
+  
+  if (!id) { res.status(400).json({ error: "User ID is required." }); return; }
+  
   const targetRows = await db.select({ status: user.status, name: user.name, email: user.email }).from(user).where(eq(user.id, id));
   const target = targetRows[0];
   if (!target) { res.status(404).json({ error: "User not found." }); return; }
@@ -142,7 +153,10 @@ router.post("/:id/reinstate", requireRole("admin"), async (req, res) => {
 router.delete("/:id", requireRole("admin"), async (req, res) => {
   const { id } = req.params;
   const currentUser = req.user!;
+  
+  if (!id) { res.status(400).json({ error: "User ID is required." }); return; }
   if (currentUser.userId === id) { res.status(400).json({ error: "You cannot delete your own account." }); return; }
+  
   const targetRows = await db.select({ role: user.role, isMainAdmin: user.isMainAdmin }).from(user).where(eq(user.id, id));
   const target = targetRows[0];
   if (!target) { res.status(404).json({ error: "User not found." }); return; }
