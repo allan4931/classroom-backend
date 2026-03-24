@@ -8,9 +8,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "setup:admin": "tsx scripts/setup-admin.ts",
-    "update:admin-password": "tsx scripts/update-admin-password.ts"
+    "db:migrate": "drizzle-kit migrate"
   },
   "type": "module",
   "dependencies": {
