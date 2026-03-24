@@ -70,6 +70,13 @@ web_modules/
 .env.*
 !.env.example
 
+# Deployment files (keep local only)
+DEPLOYMENT.md
+deploy.sh
+server-setup.sh
+ssl-setup.sh
+monitor.sh
+
 # Test files with credentials
 test-api.js
 test-*.js
@@ -82,12 +89,6 @@ reset-admin-password.ts
 revert-admin-password.ts
 setup-admin.ts
 update-admin-password.ts
-
-# Deployment scripts (should be on server, not in repo)
-deploy.sh
-server-setup.sh
-ssl-setup.sh
-monitor.sh
 
 # Sensitive configuration files
 ecosystem.config.js
